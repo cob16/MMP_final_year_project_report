@@ -1,0 +1,144 @@
+\chapter{Code Examples}
+
+\section{Python Bitfield}
+\label{python_bitfield}
+\begin{minted}[breaklines]{python}
+from enum import Enum
+import bits_mod
+
+""""
+would use 'pyserial' and bits_mod (or more useful rewrite)
+This allows us to store the packet inside a long. 
+Perhaps the most dense data structure for this problem.
+"""
+
+
+class EndBit(Enum):
+    """This ENUM defines what the most significant bit should be. 
+    The first byte should end with 1 else 0"""
+    FIRST_BYTE = 1
+    OTHER_BYTE = 0
+
+
+class PacketByte:
+    """This class allows easy manipulation, conversion and handling of our 
+    packet bytes"""
+
+    def __init__(self, data_bytes, endbit):
+        if endbit in EndBit:
+            self._endbit = endbit
+
+         # this will through ValueError back if it fails
+        self.data_bytes = int(data_bytes, 2)  
+
+
+packet = bits_mod.Bits(104)
+
+
+def packet_range(start, stop):
+    """Range wrapper that auto works in reverse"""
+    if start <= stop:
+        return list(range(start, stop))
+    else:
+        return list(range(start, stop, -1))
+
+
+#how map coule be represented
+packet_map = {
+    'left_encoder': packet_range(0, 7),
+    'right_encoder': packet_range(8, 15),
+    'well_made_function': [2, 44, 45] + packet_range(90, 104),
+}
+
+for i in packet_map['left_encoder']:
+    if i % 2 != 0:
+        packet.mark(i)
+
+
+def get_bits(array_of_indexes):
+    bits = b''
+    for i in array_of_indexes:
+        if packet.is_true(i):
+            bits += b'1'
+        else:
+            bits += b'0'
+    return bits
+
+
+print(get_bits(packet_map['left_encoder'])) #get related bytes
+
+
+def test_mapping_ranges(packet_map):
+    expected_range = set(range(0, 104))
+    actual_range = set()
+    for i in packet_map.values():
+        
+        # see if there are overlapping mappings
+        if actual_range.intersection() is None: 
+            actual_range.add(i)
+        else:
+            pass #fail out as there are overlapping maps
+    if set(range(0, 104)).difference(actual_range) is not None:
+pass # fail as there are missing mappings
+\end{minted}
+
+
+\section{Unit test output}
+\label{unit_test_output}
+\begin{verbatim}
+[==========] Running 16 tests from 6 test cases.
+[----------] Global test environment set-up.
+[----------] 4 tests from TestDisplayPacket
+[ RUN      ] TestDisplayPacket.test_find_packet_start
+[       OK ] TestDisplayPacket.test_find_packet_start (0 ms)
+[ RUN      ] TestDisplayPacket.test_shift_array
+[       OK ] TestDisplayPacket.test_shift_array (0 ms)
+[ RUN      ] TestDisplayPacket.test_get_range
+[       OK ] TestDisplayPacket.test_get_range (0 ms)
+[ RUN      ] TestDisplayPacket.test_operational_range
+[       OK ] TestDisplayPacket.test_operational_range (0 ms)
+[----------] 4 tests from TestDisplayPacket (0 ms total)
+
+[----------] 3 tests from TestDisplayPacketReaders
+[ RUN      ] TestDisplayPacketReaders.test_read_busy
+[       OK ] TestDisplayPacketReaders.test_read_busy (0 ms)
+[ RUN      ] TestDisplayPacketReaders.test_packet_read
+[       OK ] TestDisplayPacketReaders.test_packet_read (0 ms)
+[ RUN      ] TestDisplayPacketReaders.test_read_14_seg
+[       OK ] TestDisplayPacketReaders.test_read_14_seg (0 ms)
+[----------] 3 tests from TestDisplayPacketReaders (0 ms total)
+
+[----------] 2 tests from Librt8900Test
+[ RUN      ] Librt8900Test.test_in_freq_range
+[       OK ] Librt8900Test.test_in_freq_range (0 ms)
+[ RUN      ] Librt8900Test.test_current_freq_valid
+[       OK ] Librt8900Test.test_current_freq_valid (0 ms)
+[----------] 2 tests from Librt8900Test (0 ms total)
+
+[----------] 2 tests from ControlPacketTest
+[ RUN      ] ControlPacketTest.PACKET_BYTE
+[       OK ] ControlPacketTest.PACKET_BYTE (0 ms)
+[ RUN      ] ControlPacketTest.CONTROL_PACKET
+[       OK ] ControlPacketTest.CONTROL_PACKET (0 ms)
+[----------] 2 tests from ControlPacketTest (1 ms total)
+
+[----------] 2 tests from TestKeypadButtons
+[ RUN      ] TestKeypadButtons.test_set_button
+[       OK ] TestKeypadButtons.test_set_button (0 ms)
+[ RUN      ] TestKeypadButtons.test_button_from_int
+[       OK ] TestKeypadButtons.test_button_from_int (0 ms)
+[----------] 2 tests from TestKeypadButtons (0 ms total)
+
+[----------] 3 tests from TestAPISetters
+[ RUN      ] TestAPISetters.test_safe_int_char
+[       OK ] TestAPISetters.test_safe_int_char (0 ms)
+[ RUN      ] TestAPISetters.test_set_L_R_volume
+[       OK ] TestAPISetters.test_set_L_R_volume (0 ms)
+[ RUN      ] TestAPISetters.test_set_L_R_squelch
+[       OK ] TestAPISetters.test_set_L_R_squelch (0 ms)
+[----------] 3 tests from TestAPISetters (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 16 tests from 6 test cases ran. (1 ms total)
+[  PASSED  ] 16 tests.
+\end{verbatim}

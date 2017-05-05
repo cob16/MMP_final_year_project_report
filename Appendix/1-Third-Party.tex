@@ -1,0 +1,10 @@
+\chapter{Third-Party Code and Libraries}
+
+\section*{Google Test}
+The unit tests for this project where written in the Google test framework\cite{google_tests} without modification. This project is under the 2-Clause BSD Licenece and can be found at: \url{https://github.com/google/googletest /blob/master/googletest/LICENSE}.
+
+\section*{Queue.h}
+The <sys/queue.h> library is technically not part of the standard library (only de-facto). It was use to create a First in last out queue for the sender thread. This was used as it was available on targeted platforms therefore there was no requirement to re-implement. It is licenced under the 3-Clause BSD and can be found at \url{http://man7.org/linux/man-pages/man3/queue.3.license.html}.
+
+\section*{Doxygen}
+A documentation generator that parses source code to produce output in HTML or latex (among others). Licenced under the GPL v2. This can be found at \url{https://www.gnu.org/licenses/old-licenses/gpl-2.0.html}.
