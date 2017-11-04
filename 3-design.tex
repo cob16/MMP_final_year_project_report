@@ -26,7 +26,7 @@
     \label{fig:locker}
 \end{figure}
 
-In order to develop software for the radio, it must be made safe in case of rouge transmissions. To do this the radio was suspended on a wooden shelf placed in a grounded metal locker (See Figure~\ref{fig:locker}). Connected to the radio was a dummy load in place of aerial, with power to the radio coming through a whole in the side of the locker so that the door could remain closed. This helped to reduce the strength of any transmissions significantly but not entirely. As a final precaution a second hand-held radio was placed next to the \gls{8900} to monitor for any transmissions. If this was to occur the developer could then shutdown the radio quickly so as to avoid prolonged transmission.
+In order to develop software for the radio, it had to be ensured during development that an error in the program did not lead to rouge transmissions. To do this the radio was suspended on a wooden shelf placed in a grounded metal locker (See Figure~\ref{fig:locker}). Connected to the radio was a dummy load in place of aerial, with power to the radio coming through a whole in the side of the locker so that the door could remain closed. This helped to reduce the strength of any transmissions significantly but not entirely. As a final precaution a second hand-held radio was placed next to the \gls{8900} to monitor for any transmissions. If this was to occur the developer could then shutdown the radio quickly so as to avoid prolonged transmission.
 
 \begin{figure}
     \centering
@@ -35,10 +35,17 @@ In order to develop software for the radio, it must be made safe in case of roug
     \label{fig:brake_out_board}
 \end{figure}
 
-The serial brake-out board (shown in figure~\ref{fig:brake_out_board}) passes though most of the connections to the head of the radio so that the head can still be used. The ground, \gls{rx} and \gls{tx} serial connections are tapped by the serial dongle with the \gls{tx} the only disconnected line from the radio. There is also physical button that connects the power switch to ground when pressed, effectively having the same effect as pressing the power button on the head of the radio.
+The serial brake-out board (shown in figures~\ref{fig:brake_out_board} and \ref{fig:circuit_diagram}) passes though the required connections to the head of the radio. Allowing the head to still be used, even when the body is controlled by the radio. The ground, \gls{rx} and \gls{tx} serial connections are tapped by the serial dongle with the \gls{tx} being the only disconnected line from the radio. There is also a physical button that connects the power switch to ground when pressed, effectively having the same effect as pressing the power button on the head of the radio.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{img/circit.png}
+    \caption[Circuit diagram]{Circuit diagram of the brake out board}
+    \label{fig:circuit_diagram}
+\end{figure}
 
 \section{Overall Architecture}
-I will place the more generic functions of the application within a library so that they can be reused in other applications, for example with a different user interface or from a larger application such as Hamlib\cite{hamlib}. My application will provide a console for the user to provide input. I think this is appropriate as the \gls{xp} methodology demands that I keep my design as simple as possible in order to satisfy the acceptance tests. Furthermore as my program is aimed to be in the future an intermediary for signals, not the primary way for the user to control the radio. This is due to the large number of existing and successful free radio control applications designed for such a purpose, for example GRig\cite{grig}. 
+The more generic functions of the application will be abstracted out to a library so that they can be reused within other applications. The application will provide a console or shell for the user to control the radio from. A console is an appropriate interface as the \gls{xp} methodology demands that designs be made as simple as possible, while still satisfying acceptance tests. Another reason is that the program will ultimately be, an intermediary for signals and not the primary way for the user to control the radio. This is due to the large number of existing and successful free radio control applications designed for such a purpose; for example GRig\cite{grig}. 
 
 \begin{figure}[H]
 \centering
@@ -50,7 +57,7 @@ I will place the more generic functions of the application within a library so t
     \caption[basic architecture]{The basic overall library/application architecture}
 \end{figure}
 
-My design will require that the radio starts receiving a packet every 70ms (50ms to send with 20ms in between). With such a time critical task I will run this routine in a separate thread so that other tasks do not impact on its timing. This is described in figure~\ref{fig:sender_thread}. 
+The the radio must receive packets every 80ms, else it will automatically shutdown. With such a time critical task such as this, the routine was given a separate thread to operate in, so as to lower the impact of other routines on its timing. This is described in figure~\ref{fig:sender_thread}. 
 
 \begin{figure}[ht]
 \centering
@@ -85,25 +92,25 @@ My design will require that the radio starts receiving a packet every 70ms (50ms
     \label{fig:sender_thread}
 \end{figure}
 
-Items in the queue are only removed (popped) when there is more than a single packet inside. This is because the radio requires constant packets else it will shutdown. To stop this the last packet is resent continuously. Most functions will append to this packet queue to perform an action.
+Items in the queue are only removed (popped) when there is more than a single packet inside. This is done in order to prevent the automatic shutdown of the radio. The effect is that the last packet is kept in the queue and resent continuously until a new packet is added or the program shutdown. 
 
-While designing the packet sender thread I came up with the idea of the ``default packet''. This packet contains the constant state of the radio. To change the volume the default packet is directly modified. More complex actions, for example ones that require a button be pressed only momentarily will add new packets to the queue, based on this default packet. As there will possibly be duplicate packets in the queue, the queue implementation must hold only a references to the default packet.
+While designing the packet sender thread the idea of the ``default packet'' was imagined. This packet will contain much of the state of the radio. To change the volume the default packet is directly modified. More complex actions, for example actions that require a button to be pressed only momentarily, will add new packets to the queue. As there will possibly be duplicate packets in the queue, the queue implementation must hold only a reference to the default packet.
 
-I is anticipated that the bulk of memory usage will be to store representations of packets. Therefore the data structure should be as memory efficient as possible. Although this must balance with the ease of use i.e sections being able to be mapped accordingly. I will store the packet as a bitfield so that the \gls{rx} packet will take up only 42 bytes (or as close to this as possible). I will then use bit-wise operations to read and set bits inside the packet. This has the added benefit that sending via serial will not require any additional processing, as the representation is identical.
+It was anticipated that the bulk of memory usage will be to store representations of packets. Therefore the data structure should be as memory efficient as possible. Although this must balance with the ease of use i.e sections being able to be mapped accordingly. Packets are to be stored as a bitfield. This is so that the \gls{rx} packet will take up only 42 bytes (or as close to this as possible). Bit-wise operations would then be used to read and set bits inside the packet. This has the added benefit that sending via serial will not require any additional processing, as the representation is identical.
 
-Packets sent to the screen (\gls{rx}) will hereby be referred to as ``display packets''. These they are used to generate the output of the display, where a set bit in the packet corresponds to an illuminated segment on the display. The packets that are \gls{tx} to the radio body will be referred to ``control packets'' as they communicate the current state of the controls back to the radio.
+Packets sent to the screen (\gls{rx}) will hereby be referred to as ``display packets''. These are used to generate the output of the display, where a set bit in the packet corresponds to an illuminated segment on the display. The packets that are \gls{tx} to the radio body will be referred to ``control packets'' as they communicate the current state of the controls back to the radio.
 
 \begin{figure}[H]
 \centering
     \begin{tikzpicture}[node distance=2cm]
     \node (app) [process] {Application};
-    \node (lib) [process, below of=app] {libRT8000};
+    \node (lib) [process, below of=app] {LibRT8000};
         \draw [arrow] (app) -- (lib);
         \node (control) [process, below of=lib, xshift=-2cm] {Control Packet};
         \node (disp) [process, below of=lib, xshift=2cm] {Display Packet};
         \draw [arrow] (lib) -- (control);
         \draw [arrow] (lib) -- (disp);
-            \node (packet) [process, below of=disp, xshift=-2cm] {packet};
+            \node (packet) [process, below of=disp, xshift=-2cm] {Packet};
              \draw [arrow] (control) -- (packet);
              \draw [arrow] (disp) -- (packet);
     \end{tikzpicture}
@@ -114,7 +121,7 @@ Packets sent to the screen (\gls{rx}) will hereby be referred to as ``display pa
 \section{Language choice}
 \label{section:language_choice}
 
-I chose a number of candidate languages that I believe may be appropriate. To decide on what to use I have set out five main criteria: 
+A number of candidate languages were selected as potentially appropriate. Five main criteria were used to decide what was most appropriate: 
 \begin{itemize}
     \item Prior experience
     \item Existing serial support
@@ -124,7 +131,7 @@ I chose a number of candidate languages that I believe may be appropriate. To de
 \end{itemize}
 
 \section*{Python}
-Python is the language I have the most experience in using. First I created a scratch program to show that is was actually possible to store Bitfields and map the relevant sections to it (See section \ref{python_bitfield} for this code). This proved promising but I wanted to know how compact this was in memory. To do this I created a 336 bit number (42 bytes) and queried how much space the interpreter has allocated for it. 
+First a scratch program was created to show that it was actually possible to store Bitfields, with mappings to their relevant sections i.e the left volume section (See section \ref{python_bitfield} for this code). This proved promising, but there still remained the question on whether Python could store this in a sufficiently compact manner. In order to test this a 336 bit number (42 bytes) was stored in the interpreter and then queried on how much space had been allocated for it. 
 
 \begin{minted}{python}
 >>>import sys
@@ -134,9 +141,9 @@ Python is the language I have the most experience in using. First I created a sc
 72
 \end{minted}
 
-Python has given a 71\% overhead to our bitfield. 30 bytes more than needed is sub-optimal for our usage.
+Python had given a 71\% overhead to the bitfield. 30 bytes more than required is sub-optimal for our usage.
 
-My other concern was how fast the serial library was in Python. While Python does not have serial in its standard library, it does has a well supported third party library named ``PySerial''\cite{pyserial}. I wrote a scratch program to test this.
+The other concern was how fast the serial library was in Python. While Python does not have serial in its standard library, it does have a well supported third party library named ``PySerial''\cite{pyserial}. A scratch program was written to test this.
 
 \begin{minted}{python}
 import serial
@@ -149,17 +156,17 @@ for _ in range(100):
 ser.close()  
 \end{minted}
 
-This program sends 100 x 336 bits as fast as possible to the serial device located named ``ttyUSB0''. I then connected the serial line to a digital oscilloscope to measure the performance. The width between packets was a high 40ms, where the actual delay of the radio was 20ms between packets.
+This program sends 100 x 336 bits as fast as possible to the serial device located named ``ttyUSB0''. The serial line was then connected to a digital oscilloscope in order to measure the performance. The width between packets was a high 40ms, where the actual delay of the radio was 20ms between packets.
 
-While at the time I found this unacceptable it turns out that the body of the radio could tolerate up to and past 50ms of delay \todo[]{put upper bound here}. However I think I made the right choice as these performance issues could have become a problem further into development. In addition a lower level language would give me the opportunity for an application with less resource usage.
+At the time this was thought to be unacceptable, however it was later discovered that the body of the radio would take the average of 50ms of received packets before acting and could tolerate up to 80ms of delay before shutting down\cite[pg.21]{ben_report}. However, it was thought that the right choice was made as there was no way to guarantee that these performance issues would not escalate into a larger timing problem further into development. In addition a lower level language would give the application an opportunity to use less system resources.
 
 \section*{Golang}
-Golang is a new compiled language created in 2007. It brings lots of the newer ideas that interpreted languages have used such as type inheritance and method overloading. Golang was designed supplant the C programming language. One of the original authors of Golang is Ken Thompson (who is also one of the original authors of C). Its syntax is a combination of C and python, yet it is more strict than either, for example including an unused import will throw a compiler error and  having a definitive style guide instead of competing standards.
+Golang is a new compiled language created in 2007. It brings many newer ideas that interpreted languages have successfully used such as type inheritance and method overloading. Golang was designed to supplement the C programming language. One of the original authors of Golang is Ken Thompson (who is also one of the original authors of C). Its syntax is a combination of C and python, yet it is more strict than either. For example, including an unused import will induce a compiler error and endorses a definitive style guide instead of multiple competing standards.
 
 Golang could be the ideal language to use in the future, but currently its standard library does not support serial communication. The most supported third party library is still in the alpha stage. This ruled out Golang over competing languages that already had a stable \gls{api} for such actions.
 
 \section*{C}
-Other projects of similar nature have used C (including other ham radio drivers). C allows you to define a data structure with an very exact number of bytes.
+Other projects of similar nature have used C (including other ham radio drivers). C allows you to define a data structure with a very exact number of bytes.
 
 \begin{minted}[breaklines]{c}
 //adapted from http://stackoverflow.com/questions/8584577/access-bits-in-a-char-in-c
@@ -187,7 +194,7 @@ int main()
 C also has serial support in its standard library with the include``<termios.h>''. While this is not as simple to use as other languages, it is the most comprehensive of them by far. Although ``Pyserial'' may have had a had better timeout implementation as it had a hard limit of seconds after the last bit instead of time between packets like the C implementation.
 
 \section*{Comparison}
-Table~\ref{table:language_comparison} summarises my comparison of candidate languages. Despite my lack of experience, C won out by 11 points. When working in C, a quick check of how much involvement of strings there will be is necessary, as strings are a weakness of the language. I concluded that only the logging and shell will involve heavy use of strings, meaning that the bulk of my code would not be affected.
+Table~\ref{table:language_comparison} summarises the comparison of candidate languages. Despite lack of experience, C came out as superior by 11 points. When working in C, a quick check of how much involvement of strings there will be is necessary, as strings are a weakness of the language. Only the logging and shell would involve heavy use of strings, meaning that the bulk of the code would not be affected.
 
 \begin{table}[h!]
 \centering

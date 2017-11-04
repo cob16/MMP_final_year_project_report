@@ -86,7 +86,7 @@ pass # fail as there are missing mappings
 \section{Unit test output}
 \label{unit_test_output}
 \begin{verbatim}
-[==========] Running 16 tests from 6 test cases.
+[==========] Running 18 tests from 6 test cases.
 [----------] Global test environment set-up.
 [----------] 4 tests from TestDisplayPacket
 [ RUN      ] TestDisplayPacket.test_find_packet_start
@@ -120,7 +120,7 @@ pass # fail as there are missing mappings
 [       OK ] ControlPacketTest.PACKET_BYTE (0 ms)
 [ RUN      ] ControlPacketTest.CONTROL_PACKET
 [       OK ] ControlPacketTest.CONTROL_PACKET (0 ms)
-[----------] 2 tests from ControlPacketTest (1 ms total)
+[----------] 2 tests from ControlPacketTest (0 ms total)
 
 [----------] 2 tests from TestKeypadButtons
 [ RUN      ] TestKeypadButtons.test_set_button
@@ -129,16 +129,21 @@ pass # fail as there are missing mappings
 [       OK ] TestKeypadButtons.test_button_from_int (0 ms)
 [----------] 2 tests from TestKeypadButtons (0 ms total)
 
-[----------] 3 tests from TestAPISetters
+[----------] 5 tests from TestAPISetters
 [ RUN      ] TestAPISetters.test_safe_int_char
 [       OK ] TestAPISetters.test_safe_int_char (0 ms)
 [ RUN      ] TestAPISetters.test_set_L_R_volume
 [       OK ] TestAPISetters.test_set_L_R_volume (0 ms)
+[ RUN      ] TestAPISetters.test_get_L_R_volume
+[       OK ] TestAPISetters.test_get_L_R_volume (0 ms)
 [ RUN      ] TestAPISetters.test_set_L_R_squelch
 [       OK ] TestAPISetters.test_set_L_R_squelch (0 ms)
-[----------] 3 tests from TestAPISetters (0 ms total)
+[ RUN      ] TestAPISetters.test_get_L_R_squelch
+[       OK ] TestAPISetters.test_get_L_R_squelch (0 ms)
+[----------] 5 tests from TestAPISetters (0 ms total)
 
 [----------] Global test environment tear-down
-[==========] 16 tests from 6 test cases ran. (1 ms total)
-[  PASSED  ] 16 tests.
+[==========] 18 tests from 6 test cases ran. (1 ms total)
+[  PASSED  ] 18 tests.
+
 \end{verbatim}
